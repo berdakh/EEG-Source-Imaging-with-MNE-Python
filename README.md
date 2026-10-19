@@ -106,6 +106,21 @@ source-Imaging/
 
 *Note: The above structure is a suggested organization. Adjust directories as needed based on actual file locations.*
 
+## Open-weight models (`eegmodels`)
+
+The `eegmodels/` package is a unified downloader and loader for open-weight EEG
+foundation models (braindecode zoo, LaBraM, REVE, ...). It keeps a registry of models
+with their source, license and input contract, downloads weights into a local cache,
+and runs them directly on MNE `Raw`/`Epochs` objects:
+
+```bash
+pip install -e ".[braindecode,mne]"
+eegmodels list
+eegmodels pull steegformer-base
+```
+
+See [`eegmodels/README.md`](eegmodels/README.md) for the design and how to add a model.
+
 ## Contributing
 
 Contributions are welcome! If you have suggestions, bug reports, or enhancements, please open an issue or submit a pull request.([github.com][3])

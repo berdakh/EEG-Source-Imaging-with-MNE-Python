@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eegmodels"
+version = "0.1.0"
+description = "Unified downloader and loader for open-weight EEG foundation models, built around MNE-Python."
+readme = "eegmodels/README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Berdakh Abibullaev" }]
+dependencies = [
+    "numpy>=1.24",
+    "pyyaml>=6.0",
+    "pooch>=1.7",
+    "huggingface_hub>=0.20",
+]
+
+[project.optional-dependencies]
+torch = ["torch>=2.1"]
+braindecode = ["torch>=2.1", "braindecode>=1.0"]
+mne = ["mne>=1.6"]
+all = ["torch>=2.1", "braindecode>=1.0", "mne>=1.6"]
+dev = ["pytest>=7"]
+
+[project.scripts]
+eegmodels = "eegmodels.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["eegmodels*"]
+
+[tool.setuptools.package-data]
+eegmodels = ["registry/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
