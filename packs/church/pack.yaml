@@ -1,0 +1,33 @@
+name: church
+title: Church Office
+description: Sermon Studio, Announcement Hub, Ask the Office, and Letter Drafter for a church office.
+version: 0.1.0
+
+nav:
+  - id: sermon
+    label: Sermon Studio
+    workflows: [sermon_studio]
+  - id: announcements
+    label: Announcements
+    workflows: [announcements]
+  - id: ask
+    label: Ask the Office
+    workflows: [ask]
+  - id: letters
+    label: Letters
+    workflows: [letter]
+
+# Picked by scripts/pull_models.py from the machine's memory. First match wins.
+hardware_tiers:
+  - min_memory_gb: 24
+    chat_model: gemma3:12b
+    embed_model: nomic-embed-text
+    whisper_model: medium
+  - min_memory_gb: 16
+    chat_model: qwen3:8b
+    embed_model: nomic-embed-text
+    whisper_model: small
+  - min_memory_gb: 8
+    chat_model: qwen3:4b
+    embed_model: nomic-embed-text
+    whisper_model: base

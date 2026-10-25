@@ -1,0 +1,35 @@
+id: sermon_studio
+title: Sermon Studio
+description: Turn a sermon transcript into a summary, key points, discussion guide, blog post, social posts and a bulletin blurb.
+group: Sermon
+inputs:
+  - name: transcript
+    type: document
+    label: Sermon transcript
+    description: Paste the transcript or pick a transcribed recording from the library.
+steps:
+  - id: summary
+    type: generate
+    prompt: sermon_summary.md
+  - id: key_points
+    type: generate
+    prompt: key_points.md
+  - id: discussion_guide
+    type: generate
+    prompt: discussion_guide.md
+  - id: blog_post
+    type: generate
+    prompt: blog_post.md
+  - id: social_posts
+    type: generate
+    prompt: social_posts.md
+  - id: bulletin_blurb
+    type: generate
+    prompt: bulletin_blurb.md
+outputs:
+  - { name: summary, source: summary, type: markdown }
+  - { name: key_points, source: key_points, type: markdown }
+  - { name: discussion_guide, source: discussion_guide, type: docx, template: letterhead.docx }
+  - { name: blog_post, source: blog_post, type: markdown }
+  - { name: social_posts, source: social_posts, type: markdown }
+  - { name: bulletin_blurb, source: bulletin_blurb, type: markdown }

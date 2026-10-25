@@ -1,0 +1,18 @@
+id: letter
+title: Letter Drafter
+description: Draft a templated letter (donor thank-you, visitor follow-up, benevolence, volunteer appreciation) on letterhead.
+group: Communications
+inputs:
+  - name: letter_type
+    type: text
+    label: Letter type
+  - name: fields
+    type: fields
+    label: Details
+    description: Key/value pairs such as recipient, amount, date, event.
+steps:
+  - id: letter
+    type: generate
+    prompt: letter.md
+outputs:
+  - { name: letter, source: letter, type: docx, template: letterhead.docx }

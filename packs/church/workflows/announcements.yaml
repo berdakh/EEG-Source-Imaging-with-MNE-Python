@@ -1,0 +1,18 @@
+id: announcements
+title: Announcement Hub
+description: Paste the week's raw announcements and get bulletin, newsletter, email, social and slide versions in the church's voice.
+group: Communications
+inputs:
+  - name: raw
+    type: text
+    label: Raw announcements
+steps:
+  - id: examples
+    type: retrieve
+    source: raw
+    k: 4
+  - id: drafts
+    type: generate
+    prompt: announcements.md
+outputs:
+  - { name: drafts, source: drafts, type: docx, template: letterhead.docx }

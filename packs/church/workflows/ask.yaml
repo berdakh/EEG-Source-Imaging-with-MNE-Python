@@ -1,0 +1,18 @@
+id: ask
+title: Ask the Office
+description: Answer a question from the church's own documents, with citations.
+group: Documents
+inputs:
+  - name: question
+    type: text
+    label: Question
+steps:
+  - id: retrieve
+    type: retrieve
+    source: question
+    k: 6
+  - id: answer
+    type: generate
+    prompt: ask.md
+outputs:
+  - { name: answer, source: answer, type: markdown }

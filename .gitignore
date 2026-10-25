@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Local data and secrets
+.env
+*.db
+*.sqlite
+/data/
+packs/*/data/*.txt
+packs/*/data/*.json
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Never commit client material
+docs/discovery/*.pdf
+docs/discovery/*.docx
+docs/discovery/*.mp3
+docs/discovery/*.m4a
