@@ -1,0 +1,26 @@
+# braindecode port of ST-EEGFormer (masked autoencoder for EEG).
+# VERIFY: sfreq/window/channel vocabulary against the model card before relying on them.
+name: steegformer-base
+family: steegformer
+description: ST-EEGFormer base, masked-autoencoder EEG backbone (braindecode port)
+status: available
+source:
+  type: hf
+  repo_id: braindecode/STEEGFormer-base
+  revision: main          # pin to a commit hash once you have downloaded and validated it
+license:
+  spdx: MIT
+  notes: Upstream weights are MIT; the classification head is re-initialised on load.
+input:
+  sfreq: 256
+  units: uV
+  window_seconds: 4.0
+  channel_vocab: steegformer-128
+  n_channels_max: 128
+adapter:
+  class: braindecode
+  kwargs:
+    model_class: STEEGFormer
+references:
+  hf: https://huggingface.co/braindecode/STEEGFormer-base
+  docs: https://braindecode.org

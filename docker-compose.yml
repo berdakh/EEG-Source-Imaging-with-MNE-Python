@@ -1,0 +1,18 @@
+services:
+  api:
+    build: .
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - EEGAGENT_PROVIDER=${EEGAGENT_PROVIDER:-anthropic}
+      - EEGAGENT_MODEL=${EEGAGENT_MODEL:-}
+      - OLLAMA_HOST=${OLLAMA_HOST:-http://host.docker.internal:11434}
+    ports: ["8000:8000"]
+    volumes: ["workspace:/data"]
+    extra_hosts: ["host.docker.internal:host-gateway"]
+  ui:
+    build: .
+    command: ["eegagent", "ui", "--api", "http://api:8000", "--port", "8501"]
+    ports: ["8501:8501"]
+    depends_on: [api]
+volumes:
+  workspace:

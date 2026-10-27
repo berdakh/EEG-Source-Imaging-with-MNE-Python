@@ -1,0 +1,24 @@
+# 256-slot channel vocabulary; further pre-trained on HBN for the EEG 2025 Foundation Challenge.
+# VERIFY: sfreq/window against the model card.
+name: steegformer-largev2
+family: steegformer
+description: ST-EEGFormer largeV2 with 256-slot channel vocabulary, HBN-extended pretraining
+status: available
+source:
+  type: hf
+  repo_id: braindecode/STEEGFormer-largeV2
+  revision: main
+license:
+  spdx: MIT
+input:
+  sfreq: 256
+  units: uV
+  window_seconds: 4.0
+  channel_vocab: steegformer-256
+  n_channels_max: 256
+adapter:
+  class: braindecode
+  kwargs:
+    model_class: STEEGFormer
+references:
+  hf: https://huggingface.co/braindecode/STEEGFormer-largeV2

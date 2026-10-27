@@ -1,0 +1,21 @@
+# REVE (2025): pretrained on >60,000 h / 92 datasets / 25,000 subjects. Weights are gated on Hugging Face.
+# VERIFY: repo_id, sfreq and window once access is granted.
+name: reve-base
+family: reve
+description: REVE base (69M params), position-agnostic EEG foundation model, gated access
+status: gated
+source:
+  type: hf
+  repo_id: brain-bzh/reve-base
+  revision: main
+license:
+  spdx: unknown
+  notes: Gated repository; accept the terms on the model page before pulling.
+input:
+  sfreq: 200
+  units: uV
+  window_seconds: 10.0
+adapter:
+  class: planned
+references:
+  paper: https://arxiv.org/abs/2510.21585

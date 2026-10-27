@@ -1,0 +1,22 @@
+name: mvpformer-s
+family: mvpformer
+description: MVPFormer-S backbone, generatively pretrained on the SWEC iEEG dataset
+status: available
+source:
+  type: hf
+  repo_id: braindecode/mvpformer-s-pretrained
+  revision: main
+license:
+  spdx: Apache-2.0
+  research_only: true
+  notes: Upstream README restricts use to research; not for diagnostic purposes.
+input:
+  sfreq: 512
+  units: uV
+  window_seconds: 1.0
+adapter:
+  class: braindecode
+  kwargs:
+    model_class: MVPFormer
+references:
+  hf: https://huggingface.co/braindecode/mvpformer-s-pretrained
