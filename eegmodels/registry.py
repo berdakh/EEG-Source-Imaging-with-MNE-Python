@@ -43,7 +43,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import yaml
 
@@ -60,9 +60,9 @@ class RegistryError(ValueError):
 @dataclass
 class SourceSpec:
     type: str
-    repo_id: Optional[str] = None
+    repo_id: str | None = None
     revision: str = "main"
-    files: List[Dict[str, str]] = field(default_factory=list)
+    files: list[dict[str, str]] = field(default_factory=list)
 
 
 @dataclass
@@ -76,17 +76,17 @@ class LicenseSpec:
 class InputSpec:
     sfreq: float
     units: str = "uV"
-    window_seconds: Optional[float] = None
-    channels: Optional[List[str]] = None
-    channel_vocab: Optional[str] = None
-    n_channels_max: Optional[int] = None
-    amplitude_clip_uv: Optional[float] = None
+    window_seconds: float | None = None
+    channels: list[str] | None = None
+    channel_vocab: str | None = None
+    n_channels_max: int | None = None
+    amplitude_clip_uv: float | None = None
 
 
 @dataclass
 class AdapterSpec:
     cls: str
-    kwargs: Dict[str, Any] = field(default_factory=dict)
+    kwargs: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -99,8 +99,8 @@ class ModelSpec:
     license: LicenseSpec
     input: InputSpec
     adapter: AdapterSpec
-    references: Dict[str, str] = field(default_factory=dict)
-    path: Optional[Path] = None  # registry file this came from
+    references: dict[str, str] = field(default_factory=dict)
+    path: Path | None = None  # registry file this came from
 
     @property
     def available(self) -> bool:
@@ -111,13 +111,13 @@ class ModelSpec:
         return f"{self.name:<22} {self.status:<10} {lic:<28} {self.description}"
 
 
-def _require(d: Dict[str, Any], key: str, ctx: str) -> Any:
+def _require(d: dict[str, Any], key: str, ctx: str) -> Any:
     if key not in d:
         raise RegistryError(f"{ctx}: missing required key '{key}'")
     return d[key]
 
 
-def parse_spec(data: Dict[str, Any], path: Optional[Path] = None) -> ModelSpec:
+def parse_spec(data: dict[str, Any], path: Path | None = None) -> ModelSpec:
     """Validate a raw dict (from YAML) and build a ModelSpec."""
     ctx = str(path) if path else "<dict>"
     name = _require(data, "name", ctx)
@@ -184,7 +184,7 @@ def parse_spec(data: Dict[str, Any], path: Optional[Path] = None) -> ModelSpec:
     )
 
 
-def registry_dirs() -> List[Path]:
+def registry_dirs() -> list[Path]:
     """Built-in registry dir plus any extra dirs from EEGMODELS_REGISTRY (os.pathsep-separated)."""
     dirs = [REGISTRY_DIR]
     extra = os.environ.get("EEGMODELS_REGISTRY")
@@ -193,21 +193,21 @@ def registry_dirs() -> List[Path]:
     return dirs
 
 
-def load_registry() -> Dict[str, ModelSpec]:
+def load_registry() -> dict[str, ModelSpec]:
     """Read every YAML file in the registry directories. Later dirs override earlier ones."""
-    specs: Dict[str, ModelSpec] = {}
+    specs: dict[str, ModelSpec] = {}
     for d in registry_dirs():
         if not d.is_dir():
             continue
         for path in sorted(d.glob("*.yaml")) + sorted(d.glob("*.yml")):
-            with open(path, "r", encoding="utf-8") as fh:
+            with open(path, encoding="utf-8") as fh:
                 data = yaml.safe_load(fh) or {}
             spec = parse_spec(data, path)
             specs[spec.name] = spec
     return specs
 
 
-def list_models(status: Optional[str] = None) -> List[str]:
+def list_models(status: str | None = None) -> list[str]:
     """Names in the registry, optionally filtered by status."""
     specs = load_registry()
     names = [n for n, s in specs.items() if status is None or s.status == status]

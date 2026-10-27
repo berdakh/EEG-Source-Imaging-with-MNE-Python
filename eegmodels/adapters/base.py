@@ -9,8 +9,9 @@ registry entry, so the enforcement code lives here once rather than per model.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, List, Optional, Sequence, Tuple
+from typing import Any
 
 import numpy as np
 
@@ -23,7 +24,9 @@ class AdapterError(RuntimeError):
     pass
 
 
-def _as_array(data: Any, sfreq: Optional[float], ch_names: Optional[Sequence[str]]) -> Tuple[np.ndarray, float, List[str], str]:
+def _as_array(
+    data: Any, sfreq: float | None, ch_names: Sequence[str] | None
+) -> tuple[np.ndarray, float, list[str], str]:
     """Return (array in microvolts, sfreq, channel names, input units) from MNE objects or ndarrays.
 
     MNE objects store EEG in volts; arrays are assumed to already be in microvolts
@@ -34,6 +37,7 @@ def _as_array(data: Any, sfreq: Optional[float], ch_names: Optional[Sequence[str
         picks = None
         try:
             import mne  # noqa: F401
+
             picks = mne.pick_types(data.info, eeg=True, meg=False, eog=False, exclude="bads")
         except Exception:
             pass
@@ -42,9 +46,13 @@ def _as_array(data: Any, sfreq: Optional[float], ch_names: Optional[Sequence[str
         return np.asarray(arr, dtype=np.float32) * 1e6, float(data.info["sfreq"]), names, "V"
     arr = np.asarray(data, dtype=np.float32)
     if sfreq is None:
-        raise AdapterError(f"sfreq is required when passing a {cls}; pass sfreq=... to prepare()/embed()/predict().")
+        raise AdapterError(
+            f"sfreq is required when passing a {cls}; pass sfreq=... to prepare()/embed()/predict()."
+        )
     if arr.ndim not in (2, 3):
-        raise AdapterError(f"Expected (n_channels, n_times) or (n_epochs, n_channels, n_times); got shape {arr.shape}.")
+        raise AdapterError(
+            f"Expected (n_channels, n_times) or (n_epochs, n_channels, n_times); got shape {arr.shape}."
+        )
     n_ch = arr.shape[-2]
     names = list(ch_names) if ch_names is not None else [f"ch{i}" for i in range(n_ch)]
     if len(names) != n_ch:
@@ -58,12 +66,16 @@ def resample(arr: np.ndarray, sfreq_in: float, sfreq_out: float) -> np.ndarray:
         return arr
     try:
         from mne.filter import resample as _mne_resample
-        return _mne_resample(arr.astype(np.float64), up=sfreq_out, down=sfreq_in, axis=-1, verbose=False).astype(np.float32)
+
+        return _mne_resample(
+            arr.astype(np.float64), up=sfreq_out, down=sfreq_in, axis=-1, verbose=False
+        ).astype(np.float32)
     except ImportError:
         pass
     n_out = int(round(arr.shape[-1] * sfreq_out / sfreq_in))
     try:
         from scipy.signal import resample as _sp_resample
+
         return _sp_resample(arr, n_out, axis=-1).astype(np.float32)
     except ImportError:
         pass
@@ -80,7 +92,9 @@ def normalize_ch_name(name: str) -> str:
     return name.strip().upper().replace("EEG", "").replace("-REF", "").replace("-LE", "").strip()
 
 
-def select_channels(arr: np.ndarray, names: List[str], wanted: Sequence[str], strict: bool = True) -> Tuple[np.ndarray, List[str]]:
+def select_channels(
+    arr: np.ndarray, names: list[str], wanted: Sequence[str], strict: bool = True
+) -> tuple[np.ndarray, list[str]]:
     """Reorder/select channels to match ``wanted`` using case-insensitive 10-20 name matching."""
     lookup = {normalize_ch_name(n): i for i, n in enumerate(names)}
     idx, missing = [], []
@@ -95,12 +109,14 @@ def select_channels(arr: np.ndarray, names: List[str], wanted: Sequence[str], st
     return arr[..., idx, :], [wanted[i] for i, w in enumerate(wanted) if normalize_ch_name(w) in lookup]
 
 
-def window(arr: np.ndarray, sfreq: float, seconds: float, stride_seconds: Optional[float] = None) -> np.ndarray:
+def window(arr: np.ndarray, sfreq: float, seconds: float, stride_seconds: float | None = None) -> np.ndarray:
     """Cut a continuous (n_channels, n_times) array into (n_windows, n_channels, n_samples)."""
     n = int(round(seconds * sfreq))
     step = int(round((stride_seconds or seconds) * sfreq))
     if arr.shape[-1] < n:
-        raise AdapterError(f"Recording is shorter ({arr.shape[-1]} samples) than one model window ({n} samples).")
+        raise AdapterError(
+            f"Recording is shorter ({arr.shape[-1]} samples) than one model window ({n} samples)."
+        )
     starts = range(0, arr.shape[-1] - n + 1, step)
     return np.stack([arr[..., s : s + n] for s in starts], axis=0)
 
@@ -129,10 +145,10 @@ class BaseAdapter(ABC):
         self,
         data: Any,
         *,
-        sfreq: Optional[float] = None,
-        ch_names: Optional[Sequence[str]] = None,
-        units: Optional[str] = None,
-        stride_seconds: Optional[float] = None,
+        sfreq: float | None = None,
+        ch_names: Sequence[str] | None = None,
+        units: str | None = None,
+        stride_seconds: float | None = None,
         strict_channels: bool = True,
     ) -> np.ndarray:
         """Enforce the registry input contract and return (n_windows, n_channels, n_samples)."""
@@ -158,7 +174,9 @@ class BaseAdapter(ABC):
         elif inp.window_seconds:
             n = int(round(inp.window_seconds * inp.sfreq))
             if arr.shape[-1] != n:
-                raise AdapterError(f"Epochs have {arr.shape[-1]} samples but the model window is {n} samples at {inp.sfreq} Hz.")
+                raise AdapterError(
+                    f"Epochs have {arr.shape[-1]} samples but the model window is {n} samples at {inp.sfreq} Hz."
+                )
         self._ch_names = names
         return (arr / UNIT_TO_UV[inp.units]).astype(np.float32)  # convert uV -> model units
 

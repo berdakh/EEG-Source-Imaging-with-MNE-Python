@@ -4,7 +4,7 @@ One registry, one downloader, one loader for open-weight EEG foundation models,
 built to plug straight into MNE-Python objects.
 
 ```bash
-pip install -e ".[braindecode,mne]"   # from the repository root
+pip install -e ".[braindecode]"   # from the repository root; MNE is a core dependency
 
 eegmodels list                        # what is in the registry
 eegmodels info steegformer-base       # source, license, input contract
@@ -17,7 +17,7 @@ import mne, eegmodels
 
 raw = mne.io.read_raw("sub-01_eeg.vhdr", preload=True)
 model = eegmodels.load("steegformer-base")
-z = model.embed(raw)           # (n_windows, ...) embeddings
+z = model.embed(raw)  # (n_windows, ...) embeddings
 ```
 
 `embed()` accepts an `mne.io.Raw`, an `mne.Epochs`, or a NumPy array

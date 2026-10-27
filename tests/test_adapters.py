@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from eegmodels.adapters.base import AdapterError, BaseAdapter, resample, select_channels, window
+from eegmodels.adapters.base import AdapterError, BaseAdapter, resample, window
 from eegmodels.registry import parse_spec
 
 
@@ -17,8 +17,13 @@ def spec(**inp):
     base = {"sfreq": 100, "units": "uV", "window_seconds": 1.0}
     base.update(inp)
     return parse_spec(
-        {"name": "echo", "status": "available", "source": {"type": "hf", "repo_id": "x/y"},
-         "input": base, "adapter": {"class": "planned"}}
+        {
+            "name": "echo",
+            "status": "available",
+            "source": {"type": "hf", "repo_id": "x/y"},
+            "input": base,
+            "adapter": {"class": "planned"},
+        }
     )
 
 

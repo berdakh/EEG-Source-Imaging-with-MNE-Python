@@ -34,7 +34,10 @@ def url_spec(http_root, content=b"weights", bad_hash=False):
         {
             "name": "urltoy",
             "status": "available",
-            "source": {"type": "url", "files": [{"url": f"{base}/w.bin", "sha256": digest, "filename": "w.bin"}]},
+            "source": {
+                "type": "url",
+                "files": [{"url": f"{base}/w.bin", "sha256": digest, "filename": "w.bin"}],
+            },
             "license": {"spdx": "MIT", "research_only": True},
             "input": {"sfreq": 100},
             "adapter": {"class": "planned"},
@@ -77,8 +80,13 @@ def test_pull_requires_license_acceptance(tmp_path, http_root):
 
 def test_pull_planned_refuses(tmp_path):
     spec = parse_spec(
-        {"name": "p", "status": "planned", "source": {"type": "hf", "repo_id": "x/y"},
-         "input": {"sfreq": 1}, "adapter": {"class": "planned"}}
+        {
+            "name": "p",
+            "status": "planned",
+            "source": {"type": "hf", "repo_id": "x/y"},
+            "input": {"sfreq": 1},
+            "adapter": {"class": "planned"},
+        }
     )
     with pytest.raises(DownloadError, match="planned"):
         pull(spec, cache=tmp_path)

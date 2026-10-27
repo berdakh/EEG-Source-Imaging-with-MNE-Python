@@ -1,10 +1,7 @@
-import os
-
 import pytest
 import yaml
 
-from eegmodels import registry
-from eegmodels.registry import RegistryError, parse_spec, load_registry, get_spec, list_models
+from eegmodels.registry import RegistryError, get_spec, list_models, load_registry, parse_spec
 
 
 def minimal(**over):
@@ -51,6 +48,7 @@ def test_builtin_registry_is_valid():
     for s in specs.values():
         assert s.path is not None and s.path.stem == s.name, "file name should match entry name"
         from eegmodels.adapters import get_adapter_class
+
         get_adapter_class(s.adapter.cls)
 
 

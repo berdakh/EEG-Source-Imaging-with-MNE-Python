@@ -35,8 +35,10 @@ def cmd_info(args: argparse.Namespace) -> int:
         print(f"             {f['filename']}  {f['url']}")
     print(license_banner(s))
     i = s.input
-    print(f"input:       {i.sfreq} Hz, units {i.units}, window {i.window_seconds}s, "
-          f"channels {len(i.channels) if i.channels else (i.channel_vocab or 'any')}")
+    print(
+        f"input:       {i.sfreq} Hz, units {i.units}, window {i.window_seconds}s, "
+        f"channels {len(i.channels) if i.channels else (i.channel_vocab or 'any')}"
+    )
     print(f"adapter:     {s.adapter.cls} {s.adapter.kwargs}")
     for k, v in s.references.items():
         print(f"{k + ':':<13}{v}")
@@ -96,7 +98,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("recording", help="any file mne.io.read_raw understands")
     sp.add_argument("-o", "--out", default="embeddings.npy")
     sp.add_argument("--device", default="cpu")
-    sp.add_argument("--loose-channels", action="store_true", help="skip channels the recording lacks instead of failing")
+    sp.add_argument(
+        "--loose-channels", action="store_true", help="skip channels the recording lacks instead of failing"
+    )
     sp.set_defaults(fn=cmd_embed)
     return p
 

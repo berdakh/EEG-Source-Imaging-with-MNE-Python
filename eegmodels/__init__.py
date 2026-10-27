@@ -10,9 +10,9 @@ Typical use::
     z = model.embed(raw)                        # raw is an mne.io.Raw, Epochs or ndarray
 """
 
-from .registry import ModelSpec, get_spec, list_models, info
-from .download import pull, cache_dir
 from .api import load
+from .download import cache_dir, pull
+from .registry import ModelSpec, get_spec, info, list_models
 
 __all__ = [
     "ModelSpec",

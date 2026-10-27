@@ -3,35 +3,58 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "eegmodels"
-version = "0.1.0"
-description = "Unified downloader and loader for open-weight EEG foundation models, built around MNE-Python."
-readme = "eegmodels/README.md"
+name = "eeg-source-imaging"
+version = "0.2.0"
+description = "EEG source imaging with MNE-Python, an LLM agent that drives it (eegagent), and a registry-driven loader for open-weight EEG models (eegmodels)."
+readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Berdakh Abibullaev" }]
+keywords = ["EEG", "MNE", "source imaging", "LLM agent", "tool use"]
 dependencies = [
     "numpy>=1.24",
+    "scipy>=1.10",
+    "mne>=1.6",
+    "matplotlib>=3.7",
     "pyyaml>=6.0",
+    "pydantic>=2.0",
+    "httpx>=0.25",
+    "anthropic>=0.40",
     "pooch>=1.7",
     "huggingface_hub>=0.20",
 ]
 
 [project.optional-dependencies]
-torch = ["torch>=2.1"]
+api = ["fastapi>=0.110", "uvicorn[standard]>=0.27", "python-multipart>=0.0.9"]
+ui = ["streamlit>=1.30", "requests>=2.31"]
 braindecode = ["torch>=2.1", "braindecode>=1.0"]
-mne = ["mne>=1.6"]
-all = ["torch>=2.1", "braindecode>=1.0", "mne>=1.6"]
-dev = ["pytest>=7"]
+dev = ["pytest>=7", "ruff>=0.4", "fastapi>=0.110", "httpx>=0.25"]
+all = ["eeg-source-imaging[api,ui,dev]"]
 
 [project.scripts]
+eegagent = "eegagent.cli:main"
 eegmodels = "eegmodels.cli:main"
 
+[project.urls]
+Repository = "https://github.com/berdakh/EEG-Source-Imaging-with-MNE-Python"
+
 [tool.setuptools.packages.find]
-include = ["eegmodels*"]
+include = ["eegsi*", "eegagent*", "eegmodels*"]
 
 [tool.setuptools.package-data]
 eegmodels = ["registry/*.yaml"]
+eegagent = ["evals/*.yaml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["data: needs downloaded datasets (skipped when absent)"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+extend-exclude = ["legacy"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501", "B008"]

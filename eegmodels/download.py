@@ -13,8 +13,8 @@ from __future__ import annotations
 import hashlib
 import os
 import sys
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Optional
 
 from .registry import ModelSpec, get_spec
 
@@ -23,7 +23,7 @@ class DownloadError(RuntimeError):
     pass
 
 
-def cache_dir(override: Optional[os.PathLike | str] = None) -> Path:
+def cache_dir(override: os.PathLike | str | None = None) -> Path:
     if override:
         root = Path(override)
     elif os.environ.get("EEGMODELS_CACHE"):
@@ -35,7 +35,7 @@ def cache_dir(override: Optional[os.PathLike | str] = None) -> Path:
     return root
 
 
-def model_dir(spec: ModelSpec, root: Optional[os.PathLike | str] = None) -> Path:
+def model_dir(spec: ModelSpec, root: os.PathLike | str | None = None) -> Path:
     return cache_dir(root) / spec.name
 
 
@@ -54,11 +54,13 @@ def license_banner(spec: ModelSpec) -> str:
     if spec.license.notes:
         lines.append(f"  {spec.license.notes}")
     if spec.status == "gated":
-        lines.append("  Access is gated. Request access on the model page and log in with `huggingface-cli login`.")
+        lines.append(
+            "  Access is gated. Request access on the model page and log in with `huggingface-cli login`."
+        )
     return "\n".join(lines)
 
 
-def is_downloaded(spec: ModelSpec, root: Optional[os.PathLike | str] = None) -> bool:
+def is_downloaded(spec: ModelSpec, root: os.PathLike | str | None = None) -> bool:
     d = model_dir(spec, root)
     if not d.is_dir():
         return False
@@ -67,12 +69,14 @@ def is_downloaded(spec: ModelSpec, root: Optional[os.PathLike | str] = None) -> 
     return any(d.iterdir())
 
 
-def _pull_hf(spec: ModelSpec, dest: Path, token: Optional[str]) -> Path:
+def _pull_hf(spec: ModelSpec, dest: Path, token: str | None) -> Path:
     try:
         from huggingface_hub import snapshot_download
         from huggingface_hub.errors import GatedRepoError, RepositoryNotFoundError
     except ImportError as e:  # pragma: no cover
-        raise DownloadError("huggingface_hub is required for Hugging Face sources: pip install huggingface_hub") from e
+        raise DownloadError(
+            "huggingface_hub is required for Hugging Face sources: pip install huggingface_hub"
+        ) from e
     try:
         snapshot_download(
             repo_id=spec.source.repo_id,
@@ -86,7 +90,9 @@ def _pull_hf(spec: ModelSpec, dest: Path, token: Optional[str]) -> Path:
             "and authenticate with `huggingface-cli login` or the HF_TOKEN environment variable."
         ) from e
     except RepositoryNotFoundError as e:
-        raise DownloadError(f"Hugging Face repo '{spec.source.repo_id}' not found (revision {spec.source.revision}).") from e
+        raise DownloadError(
+            f"Hugging Face repo '{spec.source.repo_id}' not found (revision {spec.source.revision})."
+        ) from e
     return dest
 
 
@@ -109,10 +115,10 @@ def _pull_url(spec: ModelSpec, dest: Path, progress: bool) -> Path:
 def pull(
     name_or_spec: str | ModelSpec,
     *,
-    cache: Optional[os.PathLike | str] = None,
+    cache: os.PathLike | str | None = None,
     force: bool = False,
     accept_license: bool = True,
-    token: Optional[str] = None,
+    token: str | None = None,
     progress: bool = True,
     log: Callable[[str], None] = lambda s: print(s, file=sys.stderr),
 ) -> Path:

@@ -1,0 +1,7 @@
+.git
+legacy
+docs
+tests
+eegagent_workspace
+**/__pycache__
+*.egg-info

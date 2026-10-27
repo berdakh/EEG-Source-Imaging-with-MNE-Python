@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 from .adapters import BaseAdapter, get_adapter_class
 from .download import model_dir, pull
@@ -14,7 +13,7 @@ def load(
     name: str,
     *,
     device: str = "cpu",
-    cache: Optional[os.PathLike | str] = None,
+    cache: os.PathLike | str | None = None,
     download: bool = True,
     lazy: bool = False,
     **adapter_kwargs,
