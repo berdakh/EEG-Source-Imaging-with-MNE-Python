@@ -1,0 +1,25 @@
+# Official motor-imagery checkpoint re-hosted by braindecode: 45 channels, 1000 samples at 250 Hz, 256-d embedding.
+name: mirepnet
+family: mirepnet
+description: MIRepNet motor-imagery representation model (45 ch, 4 s at 250 Hz, 256-d embedding)
+status: available
+source:
+  type: hf
+  repo_id: braindecode/mirepnet-pretrained
+  revision: main
+license:
+  spdx: unknown
+  notes: Check the upstream MIRepNet repository for license terms before non-research use.
+input:
+  sfreq: 250
+  units: uV
+  window_seconds: 4.0
+  n_channels_max: 45
+  # VERIFY and fill the 45-channel order from the model card, then switch n_channels_max -> channels:
+  # channels: [Fp1, Fp2, ...]
+adapter:
+  class: braindecode
+  kwargs:
+    model_class: MIRepNet
+references:
+  hf: https://huggingface.co/braindecode/mirepnet-pretrained

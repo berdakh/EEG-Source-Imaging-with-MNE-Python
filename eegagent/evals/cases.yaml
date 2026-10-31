@@ -1,0 +1,60 @@
+# Eval cases for eegagent. Each case runs in a fresh session.
+#
+#   prompt            what the user says
+#   expect_tools      tool names that must appear in this relative order (subsequence)
+#   forbid_tools      tool names that must not be called
+#   expect_state      keys that must exist in session.describe() at the end
+#   checks            named assertions implemented in runner.py
+#   answer_regex      pattern the final answer must match (case-insensitive)
+#   max_steps         upper bound on model calls
+
+- id: load_and_epoch
+  prompt: "Load the simulated recording and cut epochs from -0.2 to 0.5 s around the events."
+  expect_tools: [load_recording, make_epochs]
+  forbid_tools: [compute_sources, generate_report]
+  expect_state: [raw, epochs]
+  checks: [epochs_window_matches]
+  max_steps: 6
+
+- id: filter_then_epoch
+  prompt: "Use the simulated data. Band-pass 1-30 Hz with a 50 Hz notch, then epoch -0.2 to 0.5 s."
+  expect_tools: [load_recording, filter_data, make_epochs]
+  expect_state: [raw, epochs]
+  checks: [filter_band_1_30]
+  max_steps: 6
+
+- id: full_source_localisation
+  prompt: "Load the simulated recording, preprocess it sensibly, and localise the source of the event 1 response using dSPM with a sphere head model. Where and when is the peak?"
+  expect_tools: [load_recording, make_epochs, compute_evoked, compute_forward, compute_sources]
+  expect_state: [raw, epochs, forward, sources]
+  checks: [peak_in_left_hemisphere, peak_time_near_100ms, answer_reports_peak]
+  max_steps: 12
+
+- id: cluster_statistics
+  prompt: "Load the simulated recording, epoch it, and test whether conditions event_1 and event_2 differ with a cluster permutation test. Report the significant clusters."
+  expect_tools: [load_recording, make_epochs, cluster_test]
+  expect_state: [raw, epochs, cluster_test]
+  checks: [has_significant_cluster]
+  answer_regex: "cluster"
+  max_steps: 8
+
+- id: report_generation
+  prompt: "Run the standard pipeline on the simulated recording (filter, epoch, evoked, sources) and give me an HTML report."
+  expect_tools: [load_recording, make_epochs, compute_evoked, compute_forward, compute_sources, generate_report]
+  expect_state: [raw, epochs, sources, report]
+  checks: [report_file_exists]
+  answer_regex: "report\\.html"
+  max_steps: 12
+
+- id: recover_from_missing_step
+  prompt: "Compute dSPM sources for the simulated recording."
+  expect_tools: [load_recording, compute_sources]
+  expect_state: [sources]
+  checks: [no_unrecovered_errors]
+  max_steps: 12
+
+- id: inspect_only
+  prompt: "Without changing anything, tell me what the current session contains."
+  expect_tools: [describe_state]
+  forbid_tools: [load_recording, filter_data, make_epochs, compute_sources, generate_report]
+  max_steps: 3

@@ -1,0 +1,25 @@
+# Intracranial (sEEG/iEEG) model, single-channel spectrogram input. Included so the zoo is complete;
+# not an EEG scalp model.
+name: brainbert
+family: brainbert
+description: BrainBERT self-supervised model for intracranial recordings (braindecode port)
+status: available
+source:
+  type: hf
+  repo_id: braindecode/brainbert-pretrained
+  revision: main
+license:
+  spdx: unknown
+  notes: Upstream repository ships no explicit license.
+input:
+  sfreq: 2048
+  units: uV
+  window_seconds: 5.0
+  n_channels_max: 1
+adapter:
+  class: braindecode
+  kwargs:
+    model_class: BrainBERT
+references:
+  hf: https://huggingface.co/braindecode/brainbert-pretrained
+  paper: https://openreview.net/forum?id=xmcYx_reUn6
