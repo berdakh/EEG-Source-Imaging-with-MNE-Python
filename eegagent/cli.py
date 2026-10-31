@@ -72,7 +72,9 @@ def cmd_eval(args) -> int:
     provider = get_provider(args.provider, model=args.model)
     summary = run_evals(provider, cases=args.cases, workspace=args.workspace, verbose=args.verbose)
     print(json.dumps(summary, indent=2) if args.json else summary["report"])
-    return 0 if summary["pass_rate"] >= args.min_pass_rate else 1
+    by_id = {row["id"]: row["passed"] for row in summary["cases"]}
+    required_pass = all(by_id.get(case_id, False) for case_id in args.require_case)
+    return 0 if summary["pass_rate"] >= args.min_pass_rate and required_pass else 1
 
 
 def cmd_serve(args) -> int:
@@ -120,6 +122,7 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("eval", help="run the eval suite against a provider")
     s.add_argument("--cases", default=None, help="YAML file (default: built-in cases)")
     s.add_argument("--min-pass-rate", type=float, default=0.0)
+    s.add_argument("--require-case", action="append", default=[], help="case ID that must pass (repeatable)")
     s.add_argument("--json", action="store_true")
     s.set_defaults(fn=cmd_eval)
 

@@ -14,7 +14,7 @@ class EchoAdapter(BaseAdapter):
 
 
 def spec(**inp):
-    base = {"sfreq": 100, "units": "uV", "window_seconds": 1.0}
+    base = {"sfreq": 100, "units": "uV", "window_seconds": 1.0, "contract_verified": True}
     base.update(inp)
     return parse_spec(
         {

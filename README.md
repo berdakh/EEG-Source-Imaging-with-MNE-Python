@@ -7,8 +7,8 @@ Three pieces, one repository:
 | Package | What it is |
 | --- | --- |
 | **`eegsi`** | A tested library of EEG source-imaging steps on top of [MNE-Python](https://mne.tools): filtering, bad-channel detection, epoching, ICA, forward models (no-MRI sphere or fsaverage BEM), dSPM/MNE/sLORETA inverse solutions, cluster permutation statistics and HTML reports. Distilled from the research scripts in [`legacy/`](legacy). |
-| **`eegagent`** | An LLM agent that runs those steps through typed tools. Ask for an analysis in plain language, get a summary whose every number comes from a tool call, plus an HTML report. Runs on Claude (Anthropic API) or on local open-weight models through Ollama. Ships with an eval suite, an HTTP API, a Streamlit UI and a Dockerfile. |
-| **`eegmodels`** | A registry-driven downloader and loader for open-weight EEG foundation models (braindecode zoo, LaBraM, REVE). See [`eegmodels/README.md`](eegmodels/README.md). |
+| **`eegagent`** | An LLM agent that runs those steps through typed tools. Ask for an analysis in plain language and get a summary plus an HTML report. Evals check specific tool/state outcomes and the reported source peak, not every number in free text. Runs on Claude (Anthropic API) or on local open-weight models through Ollama. Ships with an eval suite, an HTTP API, a Streamlit UI and a Dockerfile. |
+| **`eegmodels`** | A registry-driven downloader and loader for open-weight EEG foundation models (braindecode zoo, LaBraM, REVE). Bundled inference is currently blocked pending checkpoint-contract validation; see [`eegmodels/README.md`](eegmodels/README.md). |
 
 ```
 $ eegagent --provider rule run "Load the simulated recording, filter it, localise the sources and write a report"
@@ -36,7 +36,7 @@ numbers still have to come from the tool outputs, which the eval suite checks.
 git clone https://github.com/berdakh/EEG-Source-Imaging-with-MNE-Python
 cd EEG-Source-Imaging-with-MNE-Python
 pip install -e ".[dev,api,ui]"
-pytest                      # 56 tests, all offline, ~20 s
+pytest                      # offline tests; no model weights or live provider calls
 
 # no LLM needed: a keyword planner exercises the whole stack end to end
 eegagent --provider rule run "Load the simulated recording, localise the sources and write a report"

@@ -1,6 +1,4 @@
-# LaBraM (ICLR 2024). Standalone codebase; needs a custom adapter (planned).
-# Checkpoints are distributed via the authors' GitHub README (Google Drive links), not the HF hub.
-# Preprocessing per upstream: resample to 200 Hz, units uV, 200-sample (1 s) patches.
+# Source-verified metadata; runtime contract is deliberately not yet enabled.
 name: labram-base
 family: labram
 description: LaBraM base (5.8M params), pretrained on ~2,500 h of EEG from ~20 datasets
@@ -8,16 +6,23 @@ status: planned
 source:
   type: url
   files:
-    - url: https://REPLACE-WITH-RELEASE-URL/labram-base.pth
-      sha256: "0000000000000000000000000000000000000000000000000000000000000000"
-      filename: labram-base.pth
+  - url: https://REPLACE-WITH-RELEASE-URL/labram-base.pth
+    sha256: '0000000000000000000000000000000000000000000000000000000000000000'
+    filename: labram-base.pth
 license:
   spdx: MIT
 input:
   sfreq: 200
   units: uV
-  window_seconds: 1.0
-  amplitude_clip_uv: 100
+  window_seconds: null
+  contract_verified: false
+  segment_seconds: 1.0
+  preprocessing:
+  - 0.1-75 Hz bandpass filtering
+  - 50 Hz notch filtering
+  - Convert to microvolts then divide amplitudes by 100 in the model input recipe
+  validation_notes: One second is a 200-sample patch, not a verified full input context. Amplitude division
+    is not clipping. Checkpoint URL/hash and custom adapter remain placeholders; do not enable inference.
 adapter:
   class: planned
 references:

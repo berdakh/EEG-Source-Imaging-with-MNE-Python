@@ -1,4 +1,4 @@
-# Official motor-imagery checkpoint re-hosted by braindecode: 45 channels, 1000 samples at 250 Hz, 256-d embedding.
+# Source-verified metadata; runtime contract is deliberately not yet enabled.
 name: mirepnet
 family: mirepnet
 description: MIRepNet motor-imagery representation model (45 ch, 4 s at 250 Hz, 256-d embedding)
@@ -8,18 +8,70 @@ source:
   repo_id: braindecode/mirepnet-pretrained
   revision: main
 license:
-  spdx: unknown
-  notes: Check the upstream MIRepNet repository for license terms before non-research use.
+  spdx: MIT
+  notes: Port model card identifies the source code and checkpoint as MIT; dataset licenses are separate.
 input:
   sfreq: 250
   units: uV
   window_seconds: 4.0
-  n_channels_max: 45
-  # VERIFY and fill the 45-channel order from the model card, then switch n_channels_max -> channels:
-  # channels: [Fp1, Fp2, ...]
+  contract_verified: false
+  channels:
+  - F7
+  - F5
+  - F3
+  - F1
+  - FZ
+  - F2
+  - F4
+  - F6
+  - F8
+  - FT7
+  - FC5
+  - FC3
+  - FC1
+  - FCZ
+  - FC2
+  - FC4
+  - FC6
+  - FT8
+  - T7
+  - C5
+  - C3
+  - C1
+  - CZ
+  - C2
+  - C4
+  - C6
+  - T8
+  - TP7
+  - CP5
+  - CP3
+  - CP1
+  - CPZ
+  - CP2
+  - CP4
+  - CP6
+  - TP8
+  - P7
+  - P5
+  - P3
+  - P1
+  - PZ
+  - P2
+  - P4
+  - P6
+  - P8
+  preprocessing:
+  - 8-30 Hz bandpass filtering
+  - Fixed 45-channel template in the released order
+  - Euclidean alignment
+  validation_notes: Rate, sample count and channel order are verified from the released port. External
+    filtering and alignment are not implemented here; checkpoint load and 256-dimensional encoder-output
+    smoke tests remain pending. Pretraining-head label order is undocumented.
 adapter:
   class: braindecode
   kwargs:
     model_class: MIRepNet
 references:
   hf: https://huggingface.co/braindecode/mirepnet-pretrained
+  channels: https://huggingface.co/braindecode/mirepnet-pretrained/blob/main/mirepnet_channels.json

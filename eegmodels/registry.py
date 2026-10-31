@@ -22,13 +22,18 @@ Registry entry schema (all keys shown; optional ones are marked)::
       notes: free text shown before download   # optional
       research_only: false            # optional
     input:
-      sfreq: 256                      # Hz the model was trained at
+      sfreq: 256                      # checkpoint Hz; null if unverified
       units: uV | V                   # amplitude units the model expects
       window_seconds: 4.0             # length of one input window
       channels: [Fp1, Fp2, ...]       # optional fixed channel order
       channel_vocab: 10-20            # optional: name of a channel vocabulary
       n_channels_max: 256             # optional
-      amplitude_clip_uv: 100          # optional: clip |x| to this many microvolts
+      amplitude_clip_uv: 100          # optional, only if required by checkpoint recipe
+      channel_vocab_size: 145         # optional; NOT a maximum input channel count
+      segment_seconds: 1.0           # optional tokenizer patch, NOT full context
+      preprocessing: ["validated recipe description"]  # documentation, not executable
+      contract_verified: false       # blocks inference until the contract is implemented/tested
+      validation_notes: "remaining validation and primary evidence"
     adapter:
       class: braindecode              # key in eegmodels.adapters.ADAPTERS
       kwargs:                         # passed to the adapter constructor
@@ -40,6 +45,7 @@ Registry entry schema (all keys shown; optional ones are marked)::
 
 from __future__ import annotations
 
+import math
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -74,13 +80,18 @@ class LicenseSpec:
 
 @dataclass
 class InputSpec:
-    sfreq: float
+    sfreq: float | None
     units: str = "uV"
     window_seconds: float | None = None
     channels: list[str] | None = None
     channel_vocab: str | None = None
     n_channels_max: int | None = None
     amplitude_clip_uv: float | None = None
+    channel_vocab_size: int | None = None
+    segment_seconds: float | None = None
+    preprocessing: list[str] = field(default_factory=list)
+    validation_notes: str = ""
+    contract_verified: bool = False
 
 
 @dataclass
@@ -157,14 +168,50 @@ def parse_spec(data: dict[str, Any], path: Path | None = None) -> ModelSpec:
     units = inp.get("units", "uV")
     if units not in VALID_UNITS:
         raise RegistryError(f"{ctx}: input.units must be one of {sorted(VALID_UNITS)}")
+    raw_sfreq = _require(inp, "sfreq", f"{ctx}.input")
+    verified = inp.get("contract_verified", False)
+    if not isinstance(verified, bool):
+        raise RegistryError(f"{ctx}: input.contract_verified must be a boolean")
+    if raw_sfreq is None and verified:
+        raise RegistryError(f"{ctx}: verified input contract requires a sampling rate")
+    numeric = ("sfreq", "window_seconds", "segment_seconds", "amplitude_clip_uv")
+    for key in numeric:
+        value = inp.get(key)
+        if value is not None and (
+            isinstance(value, bool)
+            or not isinstance(value, (float, int))
+            or not math.isfinite(value)
+            or value <= 0
+        ):
+            raise RegistryError(f"{ctx}: input.{key} must be a finite positive number or null")
+    for key in ("n_channels_max", "channel_vocab_size"):
+        value = inp.get(key)
+        if value is not None and (type(value) is not int or value <= 0):
+            raise RegistryError(f"{ctx}: input.{key} must be a positive integer or null")
+    preprocessing = inp.get("preprocessing") or []
+    if not isinstance(preprocessing, list) or not all(isinstance(x, str) for x in preprocessing):
+        raise RegistryError(f"{ctx}: input.preprocessing must be a list of descriptions")
+    channels = inp.get("channels")
+    if channels is not None and (
+        not isinstance(channels, list)
+        or not channels
+        or not all(isinstance(x, str) and x.strip() for x in channels)
+        or len({x.strip().upper() for x in channels}) != len(channels)
+    ):
+        raise RegistryError(f"{ctx}: input.channels must contain unique nonempty channel names")
     input_ = InputSpec(
-        sfreq=float(_require(inp, "sfreq", f"{ctx}.input")),
+        sfreq=float(raw_sfreq) if raw_sfreq is not None else None,
         units=units,
         window_seconds=inp.get("window_seconds"),
         channels=inp.get("channels"),
         channel_vocab=inp.get("channel_vocab"),
         n_channels_max=inp.get("n_channels_max"),
         amplitude_clip_uv=inp.get("amplitude_clip_uv"),
+        channel_vocab_size=inp.get("channel_vocab_size"),
+        segment_seconds=inp.get("segment_seconds"),
+        preprocessing=preprocessing,
+        validation_notes=str(inp.get("validation_notes", "")),
+        contract_verified=verified,
     )
 
     ad = _require(data, "adapter", ctx)

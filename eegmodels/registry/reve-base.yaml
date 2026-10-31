@@ -1,21 +1,29 @@
-# REVE (2025): pretrained on >60,000 h / 92 datasets / 25,000 subjects. Weights are gated on Hugging Face.
-# VERIFY: repo_id, sfreq and window once access is granted.
+# Source-verified metadata; runtime contract is deliberately not yet enabled.
 name: reve-base
 family: reve
-description: REVE base (69M params), position-agnostic EEG foundation model, gated access
-status: gated
+description: REVE base (69M params), position-aware EEG foundation model; adapter planned
+status: planned
 source:
   type: hf
   repo_id: brain-bzh/reve-base
   revision: main
 license:
-  spdx: unknown
-  notes: Gated repository; accept the terms on the model page before pulling.
+  spdx: LicenseRef-REVE-Responsible-Use-1.0
+  notes: REVE Responsible Use License v1.0; review the official model license before use. This is not
+    an SPDX-listed license.
 input:
   sfreq: 200
   units: uV
-  window_seconds: 10.0
+  window_seconds: null
+  contract_verified: false
+  preprocessing:
+  - Electrode positions must accompany the signal
+  validation_notes: Repository and 200 Hz rate are confirmed; the model supports variable lengths. Adapter
+    and position-input handling are not implemented. Access status and checkpoint execution have not been
+    tested.
 adapter:
   class: planned
 references:
   paper: https://arxiv.org/abs/2510.21585
+  hf: https://huggingface.co/brain-bzh/reve-base
+  license: https://huggingface.co/brain-bzh/reve-base/blob/main/LICENSE

@@ -1,3 +1,4 @@
+# Source-verified metadata; runtime contract is deliberately not yet enabled.
 name: mvpformer-s
 family: mvpformer
 description: MVPFormer-S backbone, generatively pretrained on the SWEC iEEG dataset
@@ -13,10 +14,16 @@ license:
 input:
   sfreq: 512
   units: uV
-  window_seconds: 1.0
+  window_seconds: null
+  contract_verified: false
+  segment_seconds: 5.0
+  validation_notes: 'Published S segmentation is 2560 samples at 512 Hz. Segment length is not the complete
+    input context: original S configuration uses 25 segments. Resolve the released port configuration
+    and full context before enabling inference; checkpoint feature-output smoke test remains pending.'
 adapter:
   class: braindecode
   kwargs:
     model_class: MVPFormer
 references:
   hf: https://huggingface.co/braindecode/mvpformer-s-pretrained
+  code: https://github.com/IBM/multi-variate-parallel-transformer
