@@ -1,5 +1,4 @@
-# 256-slot channel vocabulary; further pre-trained on HBN for the EEG 2025 Foundation Challenge.
-# VERIFY: sfreq/window against the model card.
+# Source-verified metadata; runtime contract is deliberately not yet enabled.
 name: steegformer-largev2
 family: steegformer
 description: ST-EEGFormer largeV2 with 256-slot channel vocabulary, HBN-extended pretraining
@@ -11,11 +10,15 @@ source:
 license:
   spdx: MIT
 input:
-  sfreq: 256
+  sfreq: null
   units: uV
-  window_seconds: 4.0
+  window_seconds: null
   channel_vocab: steegformer-256
-  n_channels_max: 256
+  contract_verified: false
+  channel_vocab_size: 256
+  validation_notes: Checkpoint sampling rate, input duration, montage mapping and feature-output smoke
+    test remain unverified. Vocabulary size is not a maximum supported input-channel count. The 256-slot
+    electrode names are unpublished; explicitly verified chan_pos_idx is required.
 adapter:
   class: braindecode
   kwargs:

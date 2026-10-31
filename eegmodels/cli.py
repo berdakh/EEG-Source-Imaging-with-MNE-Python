@@ -7,6 +7,7 @@ import sys
 
 import numpy as np
 
+from .adapters.base import AdapterError
 from .download import DownloadError, is_downloaded, license_banner, pull
 from .registry import RegistryError, get_spec, load_registry
 
@@ -39,6 +40,14 @@ def cmd_info(args: argparse.Namespace) -> int:
         f"input:       {i.sfreq} Hz, units {i.units}, window {i.window_seconds}s, "
         f"channels {len(i.channels) if i.channels else (i.channel_vocab or 'any')}"
     )
+    print(f"contract:    {'validated' if i.contract_verified else 'UNVALIDATED (inference disabled)'}")
+    print(f"segment:     {i.segment_seconds}s (tokenizer segment, not full context)")
+    if i.channel_vocab_size:
+        print(f"vocabulary:  {i.channel_vocab_size} slots (not an input-channel limit)")
+    if i.validation_notes:
+        print(f"validation:  {i.validation_notes}")
+    for step in i.preprocessing:
+        print(f"requires:    {step}")
     print(f"adapter:     {s.adapter.cls} {s.adapter.kwargs}")
     for k, v in s.references.items():
         print(f"{k + ':':<13}{v}")
@@ -109,7 +118,7 @@ def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
     try:
         return args.fn(args)
-    except (RegistryError, DownloadError) as e:
+    except (RegistryError, DownloadError, AdapterError) as e:
         print(f"error: {e}", file=sys.stderr)
         return 1
 

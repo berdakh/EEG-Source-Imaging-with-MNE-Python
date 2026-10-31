@@ -1,4 +1,4 @@
-# VERIFY: sfreq/window/channel vocabulary against the model card before relying on them.
+# Source-verified metadata; runtime contract is deliberately not yet enabled.
 name: steegformer-large
 family: steegformer
 description: ST-EEGFormer large, masked-autoencoder EEG backbone (braindecode port)
@@ -10,11 +10,14 @@ source:
 license:
   spdx: MIT
 input:
-  sfreq: 256
+  sfreq: null
   units: uV
-  window_seconds: 4.0
-  channel_vocab: steegformer-128
-  n_channels_max: 128
+  window_seconds: null
+  channel_vocab: steegformer-145
+  contract_verified: false
+  channel_vocab_size: 145
+  validation_notes: Checkpoint sampling rate, input duration, montage mapping and feature-output smoke
+    test remain unverified. Vocabulary size is not a maximum supported input-channel count.
 adapter:
   class: braindecode
   kwargs:

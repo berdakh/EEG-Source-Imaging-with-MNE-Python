@@ -24,7 +24,7 @@
   max_steps: 6
 
 - id: full_source_localisation
-  prompt: "Load the simulated recording, preprocess it sensibly, and localise the source of the event 1 response using dSPM with a sphere head model. Where and when is the peak?"
+  prompt: "Load the simulated recording, preprocess it sensibly, and localise the source of the event 1 response using dSPM with a sphere head model. Where and when is the peak? Report a single source-peak sentence with coordinates followed by time: Peak source at [x, y, z] mm, t = VALUE s (or ms). Keep other timing information in separate sentences."
   expect_tools: [load_recording, make_epochs, compute_evoked, compute_forward, compute_sources]
   expect_state: [raw, epochs, forward, sources]
   checks: [peak_in_left_hemisphere, peak_time_near_100ms, answer_reports_peak]
@@ -46,7 +46,9 @@
   answer_regex: "report\\.html"
   max_steps: 12
 
-- id: recover_from_missing_step
+# This tests prerequisite planning, not recovery from an observed tool error.
+# A controlled failure/retry is tested separately in tests/test_evals.py.
+- id: plan_missing_prerequisites
   prompt: "Compute dSPM sources for the simulated recording."
   expect_tools: [load_recording, compute_sources]
   expect_state: [sources]

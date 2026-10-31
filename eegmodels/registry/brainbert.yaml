@@ -1,5 +1,4 @@
-# Intracranial (sEEG/iEEG) model, single-channel spectrogram input. Included so the zoo is complete;
-# not an EEG scalp model.
+# Source-verified metadata; runtime contract is deliberately not yet enabled.
 name: brainbert
 family: brainbert
 description: BrainBERT self-supervised model for intracranial recordings (braindecode port)
@@ -14,8 +13,14 @@ license:
 input:
   sfreq: 2048
   units: uV
-  window_seconds: 5.0
-  n_channels_max: 1
+  window_seconds: null
+  contract_verified: false
+  preprocessing:
+  - Laplacian rereferencing; must be supplied before inference
+  - Production STFT and normalization are performed inside the port
+  validation_notes: The port accepts raw multichannel input at 2048 Hz. No fixed five-second window is
+    established; minimum length depends on STFT settings. Rereferencing is not implemented here; checkpoint
+    feature-output smoke test remains pending.
 adapter:
   class: braindecode
   kwargs:

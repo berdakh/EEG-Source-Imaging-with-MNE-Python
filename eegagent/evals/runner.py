@@ -7,6 +7,7 @@ Run with ``eegagent eval --provider anthropic`` (real model) or ``--provider rul
 from __future__ import annotations
 
 import json
+import math
 import re
 import time
 from pathlib import Path
@@ -57,13 +58,48 @@ def _check_peak_time_near_100ms(s: Session, r: AgentResult) -> bool:
 
 
 def _check_answer_reports_peak(s: Session, r: AgentResult) -> bool:
-    """The numbers in the answer must come from the tool output (no invented coordinates)."""
+    """Check an explicit mm coordinate triple and unit-bearing source peak time.
+
+    This intentionally does not claim to fact-check every number in free text.
+    Coordinates must precede their time in the same sentence/line. All time
+    representations in that record must agree. Allow nearest-mm/ms rounding.
+    """
     peak = (s.results.get("sources") or {}).get("peak") or {}
     if not peak:
         return False
-    t_ms = round(peak["time_s"] * 1000)
-    text = r.text.replace(",", "")
-    return str(t_ms) in text or f"{peak['time_s']:.2f}" in text or f"{peak['time_s']:.3f}" in text
+    number = r"[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?"
+    coordinates = list(
+        re.finditer(
+            rf"[\[(]\s*({number})\s*,\s*({number})\s*,\s*({number})\s*[\])]\s*mm\b",
+            r.text,
+            re.I,
+        )
+    )
+    expected = peak["position_mm"]
+    if not coordinates:
+        return False
+    for coordinate in coordinates:
+        if not all(
+            math.isclose(float(value), target, rel_tol=0, abs_tol=0.51)
+            for value, target in zip(coordinate.groups(), expected, strict=True)
+        ):
+            return False
+        # The requested peak record is coordinates followed by time in the same
+        # sentence/line. A matching epoch/sensor time elsewhere cannot satisfy it.
+        # Decimal points are not sentence boundaries unless followed by whitespace.
+        record_tail = re.split(r"[.!?](?=\s|$)|\n", r.text[coordinate.end() :], maxsplit=1)[0]
+        times = re.findall(rf"(?<![\w.+-])({number})\s*(milliseconds?|ms|seconds?|s)\b", record_tail, re.I)
+        if not times or not all(
+            math.isclose(
+                float(value) / (1000 if unit.lower().startswith("m") else 1),
+                peak["time_s"],
+                rel_tol=0,
+                abs_tol=0.00051,
+            )
+            for value, unit in times
+        ):
+            return False
+    return True
 
 
 def _check_has_significant_cluster(s: Session, r: AgentResult) -> bool:
@@ -81,6 +117,19 @@ def _check_no_unrecovered_errors(s: Session, r: AgentResult) -> bool:
     for ev in r.trace:
         last_status[ev.name] = ev.is_error
     return not any(last_status.values())
+
+
+def _check_recovered_error(s: Session, r: AgentResult) -> bool:
+    """Require an actual failure followed by success for the same tool, with no unresolved failures."""
+    failed: set[str] = set()
+    recovered = False
+    for event in r.trace:
+        if event.is_error:
+            failed.add(event.name)
+        elif event.name in failed:
+            recovered = True
+            failed.remove(event.name)
+    return recovered and not failed
 
 
 CHECKS = {name[len("_check_") :]: fn for name, fn in globals().items() if name.startswith("_check_")}

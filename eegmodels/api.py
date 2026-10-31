@@ -23,9 +23,12 @@ def load(
     ``lazy=True`` skips loading the network until the first ``embed``/``predict`` call.
     """
     spec = get_spec(name)
-    weights = pull(spec, cache=cache) if download else model_dir(spec, cache)
     kwargs = {**spec.adapter.kwargs, **adapter_kwargs}
-    adapter = get_adapter_class(spec.adapter.cls)(spec, weights, device=device, **kwargs)
+    adapter = get_adapter_class(spec.adapter.cls)(spec, ".", device=device, **kwargs)
+    adapter.validate_contract()
+    adapter.weights_dir = model_dir(spec, cache)
+    if download:
+        adapter.weights_dir = pull(spec, cache=cache)
     if not lazy:
         adapter.load_weights()
     return adapter

@@ -28,17 +28,38 @@ jobs:
       - name: Unit and integration tests (offline, synthetic data)
         run: pytest -q
       - name: Offline eval suite (rule provider, exercises the harness)
-        run: eegagent --provider rule eval --json > eval_results.json || true
+        run: eegagent --provider rule eval --min-pass-rate 0.85 --json > eval_results.json
       - name: Upload eval results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: eval-results-py${{ matrix.python-version }}
           path: eval_results.json
 
-  # Real-model evals run only when an API key is configured as a repository secret.
-  eval-claude:
+  # A successful preflight is not evidence of a live model call. Keep the actual
+  # evaluation job visibly skipped when credentials are absent.
+  api-config:
     if: github.event_name == 'push'
     needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      configured: ${{ steps.check.outputs.configured }}
+    steps:
+      - id: check
+        name: Check live-eval availability (not an evaluation)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Live Claude evaluation NOT RUN: no API key configured." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  eval-claude:
+    if: github.event_name == 'push' && needs.api-config.outputs.configured == 'true'
+    needs: [test, api-config]
     runs-on: ubuntu-latest
     env:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -51,7 +72,13 @@ jobs:
           cache: pip
       - name: Install
         run: pip install -e ".[dev]"
-      - name: Eval with Claude (skipped without ANTHROPIC_API_KEY)
-        run: |
-          if [ -z "$ANTHROPIC_API_KEY" ]; then echo "no ANTHROPIC_API_KEY secret; skipping"; exit 0; fi
-          eegagent --provider anthropic eval --min-pass-rate 0.8
+      - name: Eval with Claude (real API calls)
+        run: eegagent --provider anthropic eval --min-pass-rate 0.8 --require-case inspect_only --json > eval_claude_results.json
+      - name: Upload live eval evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-claude-results
+          path: |
+            eval_claude_results.json
+            eegagent_workspace/evals/results_anthropic_*.json

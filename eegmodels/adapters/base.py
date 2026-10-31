@@ -96,7 +96,13 @@ def select_channels(
     arr: np.ndarray, names: list[str], wanted: Sequence[str], strict: bool = True
 ) -> tuple[np.ndarray, list[str]]:
     """Reorder/select channels to match ``wanted`` using case-insensitive 10-20 name matching."""
-    lookup = {normalize_ch_name(n): i for i, n in enumerate(names)}
+    targets = [normalize_ch_name(n) for n in wanted]
+    if len(set(targets)) != len(targets):
+        raise AdapterError("Ambiguous duplicate required channel names after normalization.")
+    normalized = [normalize_ch_name(n) for n in names]
+    if len(set(normalized)) != len(normalized):
+        raise AdapterError("Ambiguous duplicate channel names after normalization.")
+    lookup = {n: i for i, n in enumerate(normalized)}
     idx, missing = [], []
     for w in wanted:
         key = normalize_ch_name(w)
@@ -111,8 +117,13 @@ def select_channels(
 
 def window(arr: np.ndarray, sfreq: float, seconds: float, stride_seconds: float | None = None) -> np.ndarray:
     """Cut a continuous (n_channels, n_times) array into (n_windows, n_channels, n_samples)."""
+    stride = seconds if stride_seconds is None else stride_seconds
+    if not all(np.isfinite(x) and x > 0 for x in (sfreq, seconds, stride)):
+        raise AdapterError("Sampling rate, window and stride must be finite and positive.")
     n = int(round(seconds * sfreq))
-    step = int(round((stride_seconds or seconds) * sfreq))
+    step = int(round(stride * sfreq))
+    if n < 1 or step < 1:
+        raise AdapterError("Window and stride must each contain at least one sample.")
     if arr.shape[-1] < n:
         raise AdapterError(
             f"Recording is shorter ({arr.shape[-1]} samples) than one model window ({n} samples)."
@@ -141,6 +152,16 @@ class BaseAdapter(ABC):
         """Run the model on (n_windows, n_channels, n_samples) float32 in the model's units."""
 
     # ---- shared --------------------------------------------------------------
+    def validate_contract(self) -> None:
+        """Fail before loading weights or transforming data when the recipe is unresolved."""
+        inp = self.spec.input
+        if not inp.contract_verified or inp.sfreq is None:
+            raise AdapterError(
+                f"'{self.spec.name}' input contract is not validated: "
+                f"{inp.validation_notes or 'verify checkpoint preprocessing and montage first'}. "
+                "See docs/MODEL_VALIDATION.md. Download availability is not inference readiness."
+            )
+
     def prepare(
         self,
         data: Any,
@@ -152,12 +173,17 @@ class BaseAdapter(ABC):
         strict_channels: bool = True,
     ) -> np.ndarray:
         """Enforce the registry input contract and return (n_windows, n_channels, n_samples)."""
+        self.validate_contract()
         inp = self.spec.input
         arr, sf, names, in_units = _as_array(data, sfreq, ch_names)
         if units is not None and in_units == "uV":  # user told us what their array is in
             if units not in UNIT_TO_UV:
                 raise AdapterError(f"units must be one of {sorted(UNIT_TO_UV)}")
             arr = arr * UNIT_TO_UV[units]
+        if not np.isfinite(sf) or sf <= 0:
+            raise AdapterError("sfreq must be finite and positive.")
+        if not np.all(np.isfinite(arr)):
+            raise AdapterError("Input contains non-finite values.")
         # arr is now in microvolts
         if inp.channels:
             arr, names = select_channels(arr, names, inp.channels, strict=strict_channels)
@@ -182,9 +208,10 @@ class BaseAdapter(ABC):
 
     def embed(self, data: Any, **kw: Any) -> np.ndarray:
         """Default: the adapter's forward output is treated as an embedding."""
+        batch = self.prepare(data, **kw)
         if self.model is None:
             self.load_weights()
-        return self.forward(self.prepare(data, **kw))
+        return self.forward(batch)
 
     def predict(self, data: Any, **kw: Any) -> np.ndarray:
         """Default: same as embed. Override for models with a task head."""
