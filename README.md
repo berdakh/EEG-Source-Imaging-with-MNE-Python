@@ -72,10 +72,22 @@ Installers that set up an isolated environment and add a launcher to your applic
 | macOS / Linux | `curl -fsSL https://raw.githubusercontent.com/berdakh/EEG-Source-Imaging-with-MNE-Python/master/installers/install.sh \| bash` |
 | Windows (PowerShell) | `irm https://raw.githubusercontent.com/berdakh/EEG-Source-Imaging-with-MNE-Python/master/installers/install.ps1 \| iex` |
 
-Both need Python 3.10+ on the machine and can be re-run to upgrade. Standalone bundles that
-need no Python at all are built by the [release workflow](.github/workflows/release.yml) for
-Linux, macOS and Windows on every `v*` tag (`pyinstaller packaging/eegagent-desktop.spec` builds
-one locally). Logs for the two background services are written to `~/.eegagent/logs/`.
+Both need Python 3.10+ on the machine and can be re-run to upgrade.
+
+**Standalone Linux bundle (no Python needed).** The [release workflow](.github/workflows/release.yml)
+builds `EEG-Agent-linux-x64.tar.gz` (plus macOS and Windows bundles) on every `v*` tag:
+
+```bash
+tar xzf EEG-Agent-linux-x64.tar.gz
+./EEG-Agent/EEG-Agent                      # run it
+./EEG-Agent/install-desktop-entry.sh       # optional: add it to the application menu with an icon
+```
+
+`pyinstaller packaging/eegagent-desktop.spec` builds the same bundle locally (about 500 MB
+unpacked). Logs for the two background services are written to `~/.eegagent/logs/`.
+
+On Linux the native window needs GTK WebKit (`gir1.2-webkit2-4.1` on Debian/Ubuntu); without
+it the app opens in your default browser, which works the same.
 
 ### HTTP API and web UI
 

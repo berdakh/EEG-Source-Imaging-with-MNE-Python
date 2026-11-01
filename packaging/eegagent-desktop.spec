@@ -36,7 +36,7 @@ hiddenimports += collect_submodules("uvicorn") + collect_submodules("scipy.speci
 ]
 
 a = Analysis(
-    [os.path.join(ROOT, "eegagent", "desktop.py")],
+    [os.path.join(SPECPATH, "entry.py")],
     pathex=[ROOT],
     binaries=binaries,
     datas=datas,
@@ -58,4 +58,11 @@ exe = EXE(
     upx=False,
     console=False,  # GUI app: no terminal window; child logs go to ~/.eegagent/logs
 )
+import shutil
+import sys
+
 coll = COLLECT(exe, a.binaries, a.zipfiles, a.datas, strip=False, upx=False, name="EEG-Agent")
+
+# Linux: ship the menu-integration helper next to the executable.
+if sys.platform.startswith("linux"):
+    shutil.copy(os.path.join(SPECPATH, "linux", "install-desktop-entry.sh"), os.path.join(DISTPATH, "EEG-Agent"))

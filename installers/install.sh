@@ -47,7 +47,9 @@ case "$(uname -s)" in
     echo "Installed. Launch from $CMD (double-click in Finder) or run: $LAUNCHER"
     ;;
   Linux)
-    mkdir -p "$HOME/.local/share/applications" "$HOME/.local/bin"
+    mkdir -p "$HOME/.local/share/applications" "$HOME/.local/bin" "$HOME/.local/share/icons/hicolor/256x256/apps"
+    ICON="$("$VENV/bin/python" -c 'import eegagent, os; print(os.path.join(os.path.dirname(eegagent.__file__), "assets", "icon.png"))')"
+    [ -f "$ICON" ] && cp "$ICON" "$HOME/.local/share/icons/hicolor/256x256/apps/eegagent.png"
     ln -sf "$LAUNCHER" "$HOME/.local/bin/eegagent-desktop"
     ln -sf "$VENV/bin/eegagent" "$HOME/.local/bin/eegagent"
     cat > "$HOME/.local/share/applications/eegagent.desktop" <<DESKTOP
@@ -56,6 +58,7 @@ Type=Application
 Name=EEG-Agent
 Comment=EEG source imaging by conversation
 Exec=$LAUNCHER
+Icon=eegagent
 Terminal=false
 Categories=Science;Education;
 DESKTOP

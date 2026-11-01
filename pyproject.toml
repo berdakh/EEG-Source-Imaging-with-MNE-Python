@@ -47,7 +47,7 @@ include = ["eegsi*", "eegagent*", "eegmodels*"]
 
 [tool.setuptools.package-data]
 eegmodels = ["registry/*.yaml"]
-eegagent = ["evals/*.yaml"]
+eegagent = ["evals/*.yaml", "assets/*.png"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
