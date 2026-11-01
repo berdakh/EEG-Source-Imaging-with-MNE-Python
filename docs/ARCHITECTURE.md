@@ -17,7 +17,7 @@
 | --- | --- | --- |
 | `eegsi` | Pure analysis functions: filtering, bad channels, epoching, ICA, sphere/fsaverage forward models, inverse solutions, cluster statistics, HTML reports. Takes and returns MNE objects. | MNE, NumPy, SciPy |
 | `eegagent` | The agent: session state, tool definitions, provider adapters, the loop, evals, API, UI. | `eegsi`, anthropic SDK, httpx, FastAPI |
-| `eegmodels` | Registry-driven downloader and loader for open-weight EEG foundation models. Independent of the agent today; the plan is to expose `embed` as a tool. | huggingface_hub, pooch |
+| `eegmodels` | Registry-driven downloader and loader for open-weight EEG foundation models, exposed to the agent as the `embed_with_foundation_model` tool. | huggingface_hub, pooch |
 
 ## Design decisions
 

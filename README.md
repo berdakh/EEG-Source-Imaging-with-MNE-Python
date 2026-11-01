@@ -30,13 +30,15 @@ That transcript is from the offline keyword planner (`--provider rule`); with Cl
 Ollama model the tool calls are chosen by the LLM and the summary is written by it, but the
 numbers still have to come from the tool outputs, which the eval suite checks.
 
+![EEG-Agent Streamlit UI: a request, the tool trace, and the embedded MNE report](docs/images/ui.png)
+
 ## Quickstart
 
 ```bash
 git clone https://github.com/berdakh/EEG-Source-Imaging-with-MNE-Python
 cd EEG-Source-Imaging-with-MNE-Python
 pip install -e ".[dev,api,ui]"
-pytest                      # 56 tests, all offline, ~20 s
+pytest                      # 60 tests, all offline, ~30 s
 
 # no LLM needed: a keyword planner exercises the whole stack end to end
 eegagent --provider rule run "Load the simulated recording, localise the sources and write a report"
@@ -112,6 +114,7 @@ Paper plan: [`docs/PAPER_OUTLINE.md`](docs/PAPER_OUTLINE.md).
 | `compute_sources` | Noise covariance, inverse operator, MNE/dSPM/sLORETA/eLORETA, peak source |
 | `cluster_test` | Spatio-temporal cluster permutation test between two conditions |
 | `generate_report` | Self-contained HTML report of everything so far |
+| `embed_with_foundation_model` | Embeddings from an open-weight EEG foundation model in the `eegmodels` registry |
 
 ## Using the library directly
 
@@ -142,7 +145,7 @@ eegmodels/    EEG foundation-model loader .github/workflows  CI: lint, tests, of
 - [x] Library with synthetic-data tests for every stage
 - [x] Agent with Claude and Ollama providers, eval suite, API, UI, Docker, CI
 - [ ] Run and publish eval results for several models (see `docs/PAPER_OUTLINE.md`)
-- [ ] Expose `eegmodels` embeddings as an agent tool
+- [x] Expose `eegmodels` embeddings as an agent tool (`embed_with_foundation_model`)
 - [ ] Real-data benchmark on the MNE sample dataset and MRCP recordings
 
 ## Citation
