@@ -41,6 +41,36 @@ with st.sidebar:
         for k in ("session_id", "messages", "backend"):
             st.session_state.pop(k, None)
         st.rerun()
+    with st.expander("Settings"):
+        try:
+            cur = requests.get(f"{API}/settings", timeout=10).json()
+        except requests.RequestException:
+            cur = {"providers": ["anthropic", "ollama", "rule"], "provider": "anthropic"}
+        providers = cur.get("providers", ["anthropic", "ollama", "rule"])
+        provider = st.selectbox(
+            "Provider", providers, index=providers.index(cur.get("provider", "anthropic"))
+        )
+        model = st.text_input("Model (blank = provider default)", value=cur.get("model", ""))
+        key_label = "Anthropic API key" + (" (saved)" if cur.get("has_anthropic_key") else "")
+        api_key = st.text_input(key_label, type="password", placeholder="leave blank to keep the saved key")
+        ollama_host = st.text_input("Ollama host", value=cur.get("ollama_host", "http://localhost:11434"))
+        c1, c2 = st.columns(2)
+        if c1.button("Save", use_container_width=True):
+            payload = {"provider": provider, "model": model, "ollama_host": ollama_host}
+            if api_key:
+                payload["anthropic_api_key"] = api_key
+            try:
+                requests.put(f"{API}/settings", json=payload, timeout=10).raise_for_status()
+                st.success("Saved. Start a new session to use them.")
+            except requests.RequestException as e:
+                st.error(f"Could not save: {e}")
+        if c2.button("Check", use_container_width=True):
+            try:
+                res = requests.post(f"{API}/settings/check", timeout=30).json()
+                (st.success if res.get("ok") else st.error)(res.get("detail", ""))
+            except requests.RequestException as e:
+                st.error(f"Check failed: {e}")
+        st.caption(f"Stored in {cur.get('config_path', '~/.eegagent/config.json')}")
     st.subheader("Try")
     for example in (
         "Load the simulated recording, filter 1-30 Hz, epoch -0.2 to 0.5 s and localise the event_1 response with dSPM.",

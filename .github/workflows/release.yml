@@ -1,0 +1,64 @@
+name: Release desktop bundles
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact: EEG-Agent-linux-x64
+          - os: macos-latest
+            artifact: EEG-Agent-macos-arm64
+          - os: windows-latest
+            artifact: EEG-Agent-windows-x64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: |
+          pip install -e ".[desktop]" pyinstaller
+      - name: Build
+        run: pyinstaller --noconfirm packaging/eegagent-desktop.spec
+      - name: Smoke test (start both services, then exit)
+        shell: bash
+        env:
+          EEGAGENT_PROVIDER: rule
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then exe="dist/EEG-Agent/EEG-Agent.exe"; else exe="dist/EEG-Agent/EEG-Agent"; fi
+          "$exe" --smoke --no-window
+      - name: Package
+        shell: bash
+        run: |
+          cd dist
+          if [ "$RUNNER_OS" = "Windows" ]; then 7z a "../${{ matrix.artifact }}.zip" EEG-Agent; else tar czf "../${{ matrix.artifact }}.tar.gz" EEG-Agent; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            ${{ matrix.artifact }}.zip
+            ${{ matrix.artifact }}.tar.gz
+          if-no-files-found: ignore
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          generate_release_notes: true

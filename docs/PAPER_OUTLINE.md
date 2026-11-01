@@ -31,7 +31,7 @@ state-based checks and report TODO pass rates for TODO models.
 ## 3. System
 
 - 3.1 Analysis library (`eegsi`): what each stage computes; sphere vs fsaverage head models.
-- 3.2 Session state and tool schemas (table of the 12 tools with parameters).
+- 3.2 Session state and tool schemas (table of the 13 tools with parameters).
 - 3.3 Agent loop, error-as-data recovery, step budget.
 - 3.4 Providers: Anthropic Messages API with native tool use; Ollama chat API with tool calling.
 - 3.5 Service layer: HTTP API and UI, Docker.

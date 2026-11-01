@@ -17,7 +17,7 @@
 | --- | --- | --- |
 | `eegsi` | Pure analysis functions: filtering, bad channels, epoching, ICA, sphere/fsaverage forward models, inverse solutions, cluster statistics, HTML reports. Takes and returns MNE objects. | MNE, NumPy, SciPy |
 | `eegagent` | The agent: session state, tool definitions, provider adapters, the loop, evals, API, UI. | `eegsi`, anthropic SDK, httpx, FastAPI |
-| `eegmodels` | Registry-driven downloader and loader for open-weight EEG foundation models. Independent of the agent today; the plan is to expose `embed` as a tool. | huggingface_hub, pooch |
+| `eegmodels` | Registry-driven downloader and loader for open-weight EEG foundation models, exposed to the agent as the `embed_with_foundation_model` tool. | huggingface_hub, pooch |
 
 ## Design decisions
 
@@ -48,6 +48,17 @@ provider runs the whole harness offline in CI; the real model runs when an API k
 **No MRI required.** The default head model is a 4-shell sphere with a volume source grid, so the
 complete pipeline, including source localisation, runs on any machine in seconds. The
 `fsaverage` option gives a proper BEM on the FreeSurfer template when the download is possible.
+
+## Desktop packaging
+
+`eegagent/desktop.py` is a small supervisor: it picks two free ports, spawns the API and the
+Streamlit UI as child processes, waits on their health endpoints, opens a pywebview window (or
+the browser) and terminates the children when the window closes. Children are spawned as
+`python -m eegagent.desktop --serve-api PORT` from source and as the frozen executable itself
+with the same flag from a PyInstaller bundle, so one binary covers everything. Settings live in
+`~/.eegagent/config.json` with precedence explicit argument > environment > file > default,
+resolved per request so the UI's settings panel takes effect on the next session without a
+restart.
 
 ## Request flow for one user turn
 
