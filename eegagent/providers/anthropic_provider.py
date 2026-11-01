@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 from typing import Any
 
 from .base import Provider, ToolCall, Turn
@@ -23,8 +22,11 @@ class AnthropicProvider(Provider):
     ):
         import anthropic
 
-        self.client = anthropic.Anthropic()
-        self.model = model or os.environ.get("EEGAGENT_MODEL") or DEFAULT_MODEL
+        from ..config import setting
+
+        api_key = setting("anthropic_api_key")  # None -> the SDK's own credential resolution
+        self.client = anthropic.Anthropic(api_key=api_key or None)
+        self.model = setting("model", model, DEFAULT_MODEL)
         self.max_tokens = max_tokens
         self.effort = effort
         self.fallbacks = fallbacks

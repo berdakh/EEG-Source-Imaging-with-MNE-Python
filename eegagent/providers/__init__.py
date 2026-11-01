@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
 from .base import Provider, ToolCall, ToolResult, Turn
 from .scripted import RuleProvider, ScriptedProvider
 
@@ -11,7 +9,9 @@ PROVIDERS = ("anthropic", "ollama", "rule")
 
 
 def get_provider(name: str | None = None, model: str | None = None, **kwargs) -> Provider:
-    name = (name or os.environ.get("EEGAGENT_PROVIDER") or "anthropic").lower()
+    from ..config import setting
+
+    name = str(setting("provider", name, "anthropic")).lower()
     if name == "anthropic":
         from .anthropic_provider import AnthropicProvider
 

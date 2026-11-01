@@ -27,13 +27,17 @@ dependencies = [
 [project.optional-dependencies]
 api = ["fastapi>=0.110", "uvicorn[standard]>=0.27", "python-multipart>=0.0.9"]
 ui = ["streamlit>=1.30", "requests>=2.31"]
+desktop = ["fastapi>=0.110", "uvicorn[standard]>=0.27", "streamlit>=1.30", "requests>=2.31", "pywebview>=5.0"]
 braindecode = ["torch>=2.1", "braindecode>=1.0"]
 dev = ["pytest>=7", "ruff>=0.4", "fastapi>=0.110", "httpx>=0.25"]
-all = ["eeg-source-imaging[api,ui,dev]"]
+all = ["eeg-source-imaging[api,ui,desktop,dev]"]
 
 [project.scripts]
 eegagent = "eegagent.cli:main"
 eegmodels = "eegmodels.cli:main"
+
+[project.gui-scripts]
+eegagent-desktop = "eegagent.desktop:main"
 
 [project.urls]
 Repository = "https://github.com/berdakh/EEG-Source-Imaging-with-MNE-Python"

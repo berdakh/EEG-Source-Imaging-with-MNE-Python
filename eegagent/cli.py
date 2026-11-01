@@ -78,11 +78,18 @@ def cmd_eval(args) -> int:
 def cmd_serve(args) -> int:
     import uvicorn
 
-    os.environ.setdefault("EEGAGENT_PROVIDER", args.provider or "anthropic")
+    if args.provider:
+        os.environ["EEGAGENT_PROVIDER"] = args.provider
     if args.model:
         os.environ["EEGAGENT_MODEL"] = args.model
     uvicorn.run("eegagent.server:app", host=args.host, port=args.port, reload=False)
     return 0
+
+
+def cmd_desktop(args) -> int:
+    from .desktop import launch
+
+    return launch(provider=args.provider, model=args.model, no_window=args.no_window, smoke=args.smoke)
 
 
 def cmd_ui(args) -> int:
@@ -101,9 +108,14 @@ def build_parser() -> argparse.ArgumentParser:
         prog="eegagent", description="LLM agent for EEG source imaging with MNE-Python."
     )
     p.add_argument(
-        "--provider", choices=PROVIDERS, default=None, help="default: $EEGAGENT_PROVIDER or anthropic"
+        "--provider",
+        choices=PROVIDERS,
+        default=None,
+        help="default: $EEGAGENT_PROVIDER, then ~/.eegagent/config.json",
     )
-    p.add_argument("--model", default=None, help="model id (default: provider default or $EEGAGENT_MODEL)")
+    p.add_argument(
+        "--model", default=None, help="model id (default: $EEGAGENT_MODEL, config file, provider default)"
+    )
     p.add_argument("--workspace", default="eegagent_workspace")
     p.add_argument("--max-steps", type=int, default=25)
     p.add_argument("-v", "--verbose", action="store_true")
@@ -127,6 +139,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--host", default="0.0.0.0")
     s.add_argument("--port", type=int, default=8000)
     s.set_defaults(fn=cmd_serve)
+
+    s = sub.add_parser("desktop", help="start API + UI together and open the app window")
+    s.add_argument(
+        "--no-window", action="store_true", help="open the system browser instead of a native window"
+    )
+    s.add_argument("--smoke", action="store_true", help="start, verify both services respond, then exit")
+    s.set_defaults(fn=cmd_desktop)
 
     s = sub.add_parser("ui", help="start the Streamlit front end (expects the API to be running)")
     s.add_argument("--api", default="http://localhost:8000")

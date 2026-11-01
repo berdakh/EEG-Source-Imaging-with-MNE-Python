@@ -49,6 +49,17 @@ provider runs the whole harness offline in CI; the real model runs when an API k
 complete pipeline, including source localisation, runs on any machine in seconds. The
 `fsaverage` option gives a proper BEM on the FreeSurfer template when the download is possible.
 
+## Desktop packaging
+
+`eegagent/desktop.py` is a small supervisor: it picks two free ports, spawns the API and the
+Streamlit UI as child processes, waits on their health endpoints, opens a pywebview window (or
+the browser) and terminates the children when the window closes. Children are spawned as
+`python -m eegagent.desktop --serve-api PORT` from source and as the frozen executable itself
+with the same flag from a PyInstaller bundle, so one binary covers everything. Settings live in
+`~/.eegagent/config.json` with precedence explicit argument > environment > file > default,
+resolved per request so the UI's settings panel takes effect on the next session without a
+restart.
+
 ## Request flow for one user turn
 
 1. `Agent.run(text)` appends the user message and calls `provider.complete(system, history, tools)`.
