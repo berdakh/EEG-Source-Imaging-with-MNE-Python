@@ -45,3 +45,21 @@ def test_unknown_session_and_validation(client):
     assert client.get(f"/sessions/{sid}/report").status_code == 404
     assert client.post(f"/sessions/{sid}/chat", json={"message": ""}).status_code == 422
     assert client.delete(f"/sessions/{sid}").json()["deleted"] == sid
+
+
+def test_settings_endpoints(client, tmp_path, monkeypatch):
+    monkeypatch.setenv("EEGAGENT_CONFIG", str(tmp_path / "config.json"))
+    monkeypatch.delenv("EEGAGENT_MODEL", raising=False)
+    cur = client.get("/settings").json()
+    assert cur["providers"] == ["anthropic", "ollama", "rule"] and cur["has_anthropic_api_key"] is False
+    r = client.put(
+        "/settings", json={"model": "qwen3:8b", "anthropic_api_key": "sk-x", "ollama_host": "http://h:1"}
+    )
+    assert (
+        r.status_code == 200 and r.json()["model"] == "qwen3:8b" and r.json()["has_anthropic_api_key"] is True
+    )
+    assert "sk-x" not in r.text
+    assert client.put("/settings", json={"provider": "nope"}).status_code == 422
+    # provider comes from the env in this fixture ('rule'), so the check is the offline branch
+    chk = client.post("/settings/check").json()
+    assert chk["ok"] is True and chk["provider"] == "rule"

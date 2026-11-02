@@ -12,7 +12,6 @@ GET  /health
 
 from __future__ import annotations
 
-import os
 import threading
 from pathlib import Path
 from typing import Any
@@ -23,11 +22,12 @@ from pydantic import BaseModel, Field
 
 from . import __version__
 from .agent import Agent
-from .providers import get_provider
+from .config import public_settings, save_config, setting
+from .providers import PROVIDERS, get_provider
 from .session import Session
 from .tools import tool_specs
 
-WORKSPACE = Path(os.environ.get("EEGAGENT_WORKSPACE", "eegagent_workspace"))
+WORKSPACE = Path(setting("workspace", None, "eegagent_workspace"))
 
 app = FastAPI(
     title="eegagent", version=__version__, description="LLM agent for EEG source imaging with MNE-Python."
@@ -49,6 +49,13 @@ class ToolEventOut(BaseModel):
     seconds: float
 
 
+class SettingsUpdate(BaseModel):
+    provider: str | None = None
+    model: str | None = None
+    anthropic_api_key: str | None = None
+    ollama_host: str | None = None
+
+
 class ChatResponse(BaseModel):
     session_id: str
     text: str
@@ -60,7 +67,7 @@ class ChatResponse(BaseModel):
 
 
 def _make_agent(session_id: str | None = None) -> Agent:
-    provider = get_provider(os.environ.get("EEGAGENT_PROVIDER"), model=os.environ.get("EEGAGENT_MODEL"))
+    provider = get_provider()  # resolved from env, then the config file, per request
     session = Session(workspace=WORKSPACE, **({"session_id": session_id} if session_id else {}))
     return Agent(provider, session)
 
@@ -74,11 +81,50 @@ def _get(session_id: str) -> tuple[Agent, threading.Lock]:
 
 @app.get("/health")
 def health() -> dict[str, Any]:
-    return {
-        "status": "ok",
-        "version": __version__,
-        "provider": os.environ.get("EEGAGENT_PROVIDER", "anthropic"),
-    }
+    return {"status": "ok", "version": __version__, "provider": setting("provider")}
+
+
+@app.get("/settings")
+def get_settings() -> dict[str, Any]:
+    out = public_settings()
+    out["providers"] = list(PROVIDERS)
+    return out
+
+
+@app.put("/settings")
+def put_settings(req: SettingsUpdate) -> dict[str, Any]:
+    """Persist settings to the config file. They apply to sessions created afterwards."""
+    if req.provider is not None and req.provider not in PROVIDERS:
+        raise HTTPException(422, f"provider must be one of {PROVIDERS}")
+    save_config(req.model_dump(exclude_none=True))
+    return get_settings()
+
+
+@app.post("/settings/check")
+def check_settings() -> dict[str, Any]:
+    """Can the configured provider be reached? Cheap, no model call."""
+    name = str(setting("provider"))
+    try:
+        if name == "ollama":
+            import httpx
+
+            host = str(setting("ollama_host")).rstrip("/")
+            r = httpx.get(f"{host}/api/tags", timeout=5)
+            r.raise_for_status()
+            models = [m.get("name") for m in r.json().get("models", [])]
+            return {
+                "provider": name,
+                "ok": True,
+                "detail": f"{len(models)} model(s) available",
+                "models": models,
+            }
+        if name == "anthropic":
+            provider = get_provider("anthropic")
+            provider.client.models.list(limit=1)
+            return {"provider": name, "ok": True, "detail": f"API key accepted; model {provider.model}"}
+        return {"provider": name, "ok": True, "detail": "offline provider, nothing to check"}
+    except Exception as e:  # report, never raise: this is a diagnostic
+        return {"provider": name, "ok": False, "detail": f"{type(e).__name__}: {str(e)[:300]}"}
 
 
 @app.get("/tools")

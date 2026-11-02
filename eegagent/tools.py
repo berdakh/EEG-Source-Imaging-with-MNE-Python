@@ -398,6 +398,61 @@ def generate_report(session: Session, title: str = "EEG source imaging report") 
     return {"path": str(out), "size_bytes": Path(out).stat().st_size}
 
 
+def _foundation_model_names() -> list[str]:
+    try:
+        from eegmodels import list_models
+
+        return list_models(status="available")
+    except Exception:  # registry problems must not break tool registration
+        return []
+
+
+@tool(
+    "embed_with_foundation_model",
+    "Compute embeddings of the current epochs (or 4-s windows of the raw data if there are no "
+    "epochs) with an open-weight EEG foundation model from the eegmodels registry. Downloads the "
+    "weights on first use. Saves the embedding array to the session workspace and returns its "
+    "shape plus summary statistics. Available models: " + ", ".join(_foundation_model_names()) + ".",
+    {
+        "model": {"type": "string", "description": "Registry name, e.g. steegformer-base."},
+        "strict_channels": {
+            "type": "boolean",
+            "description": "Fail if the recording lacks channels the model expects (default false: skip them).",
+        },
+    },
+    ["model"],
+)
+def embed_with_foundation_model(session: Session, model: str, strict_channels: bool = False) -> dict:
+    _need(session, "raw", "Call load_recording first.")
+    import numpy as np
+
+    import eegmodels
+    from eegmodels.adapters import AdapterError
+    from eegmodels.download import DownloadError
+    from eegmodels.registry import RegistryError
+
+    inst = session.epochs if session.epochs is not None else session.raw
+    try:
+        adapter = eegmodels.load(model, device="cpu")
+        z = np.asarray(adapter.embed(inst, strict_channels=strict_channels))
+    except (RegistryError, DownloadError, AdapterError) as e:
+        raise ToolError(str(e)) from e
+    path = session.dir / f"embeddings_{model}.npy"
+    np.save(path, z)
+    out = {
+        "model": model,
+        "shape": list(z.shape),
+        "n_windows": int(z.shape[0]) if z.ndim else 1,
+        "mean": float(z.mean()),
+        "std": float(z.std()),
+        "path": str(path),
+        "input": "epochs" if session.epochs is not None else "raw",
+    }
+    session.results["embeddings"] = out
+    session.note(f"Embeddings with {model}: shape {out['shape']}")
+    return out
+
+
 # ---------------------------------------------------------------------------- helpers
 
 

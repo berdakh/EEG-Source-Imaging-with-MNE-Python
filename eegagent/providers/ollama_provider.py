@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 from typing import Any
 
 import httpx
@@ -19,8 +18,10 @@ class OllamaProvider(Provider):
     def __init__(
         self, model: str | None = None, host: str | None = None, timeout: float = 600.0, num_ctx: int = 16384
     ):
-        self.model = model or os.environ.get("EEGAGENT_MODEL") or DEFAULT_MODEL
-        self.host = (host or os.environ.get("OLLAMA_HOST") or "http://localhost:11434").rstrip("/")
+        from ..config import setting
+
+        self.model = setting("model", model, DEFAULT_MODEL)
+        self.host = str(setting("ollama_host", host, "http://localhost:11434")).rstrip("/")
         self.timeout = timeout
         self.num_ctx = num_ctx
 

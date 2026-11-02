@@ -30,13 +30,15 @@ That transcript is from the offline keyword planner (`--provider rule`); with Cl
 Ollama model the tool calls are chosen by the LLM and the summary is written by it, but the
 numbers still have to come from the tool outputs, which the eval suite checks.
 
+![EEG-Agent Streamlit UI: a request, the tool trace, and the embedded MNE report](docs/images/ui.png)
+
 ## Quickstart
 
 ```bash
 git clone https://github.com/berdakh/EEG-Source-Imaging-with-MNE-Python
 cd EEG-Source-Imaging-with-MNE-Python
 pip install -e ".[dev,api,ui]"
-pytest                      # 56 tests, all offline, ~20 s
+pytest                      # 70 tests, all offline, ~40 s
 
 # no LLM needed: a keyword planner exercises the whole stack end to end
 eegagent --provider rule run "Load the simulated recording, localise the sources and write a report"
@@ -52,12 +54,50 @@ eegagent --provider ollama --model qwen3:8b chat
 `eegagent run` prints the tool calls on stderr as they happen and the answer on stdout.
 Pass a path instead of `simulated` to analyse your own recording (BrainVision, FIF, EDF, EEGLAB).
 
+### Desktop app
+
+One command starts the API and the UI together and opens the app in a window (native via
+pywebview when available, otherwise your browser). Provider, model, API key and Ollama host are
+set in the sidebar and saved to `~/.eegagent/config.json`, so no environment variables are needed.
+
+```bash
+pip install -e ".[desktop]"
+eegagent desktop
+```
+
+Installers that set up an isolated environment and add a launcher to your applications menu:
+
+| Platform | Install |
+| --- | --- |
+| macOS / Linux | `curl -fsSL https://raw.githubusercontent.com/berdakh/EEG-Source-Imaging-with-MNE-Python/master/installers/install.sh \| bash` |
+| Windows (PowerShell) | `irm https://raw.githubusercontent.com/berdakh/EEG-Source-Imaging-with-MNE-Python/master/installers/install.ps1 \| iex` |
+
+Both need Python 3.10+ on the machine and can be re-run to upgrade.
+
+**Standalone Linux bundle (no Python needed).** The [release workflow](.github/workflows/release.yml)
+builds `EEG-Agent-linux-x64.tar.gz` (plus macOS and Windows bundles) on every `v*` tag:
+
+```bash
+tar xzf EEG-Agent-linux-x64.tar.gz
+./EEG-Agent/EEG-Agent                      # run it
+./EEG-Agent/install-desktop-entry.sh       # optional: add it to the application menu with an icon
+```
+
+`pyinstaller packaging/eegagent-desktop.spec` builds the same bundle locally (about 500 MB
+unpacked). Logs for the two background services are written to `~/.eegagent/logs/`.
+
+On Linux the native window needs GTK WebKit (`gir1.2-webkit2-4.1` on Debian/Ubuntu); without
+it the app opens in your default browser, which works the same.
+
 ### HTTP API and web UI
 
 ```bash
 eegagent serve                # FastAPI on :8000, docs at /docs
 eegagent ui                   # Streamlit on :8501, talks to the API
 ```
+
+The API also exposes `GET/PUT /settings` and `POST /settings/check`, which the UI's settings
+panel uses to store the provider configuration and test that it is reachable.
 
 or with Docker:
 
@@ -112,6 +152,7 @@ Paper plan: [`docs/PAPER_OUTLINE.md`](docs/PAPER_OUTLINE.md).
 | `compute_sources` | Noise covariance, inverse operator, MNE/dSPM/sLORETA/eLORETA, peak source |
 | `cluster_test` | Spatio-temporal cluster permutation test between two conditions |
 | `generate_report` | Self-contained HTML report of everything so far |
+| `embed_with_foundation_model` | Embeddings from an open-weight EEG foundation model in the `eegmodels` registry |
 
 ## Using the library directly
 
@@ -141,8 +182,9 @@ eegmodels/    EEG foundation-model loader .github/workflows  CI: lint, tests, of
 
 - [x] Library with synthetic-data tests for every stage
 - [x] Agent with Claude and Ollama providers, eval suite, API, UI, Docker, CI
+- [x] Desktop app: launcher, in-app settings, installers, PyInstaller bundles via release workflow
 - [ ] Run and publish eval results for several models (see `docs/PAPER_OUTLINE.md`)
-- [ ] Expose `eegmodels` embeddings as an agent tool
+- [x] Expose `eegmodels` embeddings as an agent tool (`embed_with_foundation_model`)
 - [ ] Real-data benchmark on the MNE sample dataset and MRCP recordings
 
 ## Citation

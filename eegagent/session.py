@@ -68,7 +68,7 @@ class Session:
             d["sources"] = self.results.get("sources")
         if self.bads:
             d["interpolated_bads"] = self.bads
-        for k in ("cluster_test", "ica", "report"):
+        for k in ("cluster_test", "ica", "report", "embeddings"):
             if k in self.results:
                 d[k] = self.results[k]
         d["steps_done"] = len(self.log)
